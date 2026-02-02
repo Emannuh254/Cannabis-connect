@@ -9,14 +9,21 @@ import { isAuthenticated } from "./replit_integrations/auth";
 
 export async function registerRoutes(
   httpServer: Server,
-  app: Express
+  app: Express,
 ): Promise<Server> {
-  // Setup Auth FIRST
-  await setupAuth(app);
-  registerAuthRoutes(app);
+  // // Setup Auth FIRST
+  // await setupAuth(app);
+  // registerAuthRoutes(app);
+  // // Setup Auth ONLY if environment variables exist
+  if (process.env.REPL_ID && process.env.SESSION_SECRET) {
+    await setupAuth(app);
+    registerAuthRoutes(app);
+  } else {
+    console.warn("Replit auth disabled in local development");
+  }
 
   // API Routes
-  
+
   // Products
   app.get(api.products.list.path, async (req, res) => {
     const products = await storage.getProducts();
@@ -71,11 +78,11 @@ export async function registerRoutes(
 
   app.patch(api.orders.updateStatus.path, isAuthenticated, async (req, res) => {
     try {
-       // Validate user is admin?
-       const status = req.body.status;
-       const orderId = Number(req.params.id);
-       const order = await storage.updateOrderStatus(orderId, status);
-       res.json(order);
+      // Validate user is admin?
+      const status = req.body.status;
+      const orderId = Number(req.params.id);
+      const order = await storage.updateOrderStatus(orderId, status);
+      res.json(order);
     } catch (err) {
       res.status(500).json({ message: "Internal Server Error" });
     }
@@ -92,12 +99,14 @@ async function seedDatabase() {
   if (products.length === 0) {
     console.log("Seeding database...");
     const dummySellerId = "seed-seller-1"; // Won't link to real user but works for display
-    
+
     await storage.createProduct({
       name: "Blue Dream",
-      description: "A sativa-dominant hybrid marijuana strain made by crossing Blueberry with Haze.",
+      description:
+        "A sativa-dominant hybrid marijuana strain made by crossing Blueberry with Haze.",
       price: 1500,
-      imageUrl: "https://images.leafly.com/flower-images/blue-dream.png?auto=compress,format&w=350&dpr=1",
+      imageUrl:
+        "https://images.leafly.com/flower-images/blue-dream.png?auto=compress,format&w=350&dpr=1",
       category: "Hybrid",
       stock: 100,
       sellerId: dummySellerId,
@@ -105,9 +114,11 @@ async function seedDatabase() {
 
     await storage.createProduct({
       name: "OG Kush",
-      description: "A legendary strain with a distinct aroma and strong effects.",
+      description:
+        "A legendary strain with a distinct aroma and strong effects.",
       price: 1800,
-      imageUrl: "https://images.leafly.com/flower-images/og-kush.png?auto=compress,format&w=350&dpr=1",
+      imageUrl:
+        "https://images.leafly.com/flower-images/og-kush.png?auto=compress,format&w=350&dpr=1",
       category: "Hybrid",
       stock: 50,
       sellerId: dummySellerId,
@@ -115,22 +126,26 @@ async function seedDatabase() {
 
     await storage.createProduct({
       name: "Sour Diesel",
-      description: "A popular sativa strain known for its pungent diesel-like scent.",
+      description:
+        "A popular sativa strain known for its pungent diesel-like scent.",
       price: 1600,
-      imageUrl: "https://images.leafly.com/flower-images/sour-diesel.png?auto=compress,format&w=350&dpr=1",
+      imageUrl:
+        "https://images.leafly.com/flower-images/sour-diesel.png?auto=compress,format&w=350&dpr=1",
       category: "Sativa",
       stock: 75,
       sellerId: dummySellerId,
     });
-    
+
     await storage.createProduct({
-        name: "Granddaddy Purple",
-        description: "A famous indica cross of Mendo Purps, Skunk, and Afghanistan.",
-        price: 1700,
-        imageUrl: "https://images.leafly.com/flower-images/granddaddy-purple.png?auto=compress,format&w=350&dpr=1",
-        category: "Indica",
-        stock: 60,
-        sellerId: dummySellerId,
+      name: "Granddaddy Purple",
+      description:
+        "A famous indica cross of Mendo Purps, Skunk, and Afghanistan.",
+      price: 1700,
+      imageUrl:
+        "https://images.leafly.com/flower-images/granddaddy-purple.png?auto=compress,format&w=350&dpr=1",
+      category: "Indica",
+      stock: 60,
+      sellerId: dummySellerId,
     });
   }
 }
